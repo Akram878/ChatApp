@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:core="clr-namespace:ChatApp.Core"
              mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="#F0F2F5">
         <Border Background="White" CornerRadius="10" Width="400" Height="500">
@@ -13,10 +14,14 @@
                 <TextBlock Text="Welcome Back" FontSize="28" FontWeight="Bold" Margin="0,0,0,30" HorizontalAlignment="Center"/>
                 
                 <TextBox Text="{Binding Email}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Email"/>
-                <PasswordBox Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Password"/>
-                
+                <PasswordBox core:PasswordBoxAssistant.BoundPassword="{Binding Password, Mode=TwoWay}"
+                             Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Password"/>
+
+
+
                 <Button Command="{Binding LoginCommand}" Content="Login" Background="#0084FF" Foreground="White" Padding="10" Margin="0,10" BorderThickness="0"/>
-                
+
+                <Button Command="{Binding RecoverPasswordCommand}" Content="Forgot password?" Background="Transparent" Foreground="#0084FF" BorderThickness="0" HorizontalAlignment="Left"/>
                 <TextBlock Text="Or continue with" HorizontalAlignment="Center" Margin="0,20"/>
                 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -25,8 +30,11 @@
                 </StackPanel>
                 
                 <Button Command="{Binding GoToRegisterCommand}" Content="Create an account" Background="Transparent" Foreground="#0084FF" BorderThickness="0" Margin="0,20"/>
-                
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" HorizontalAlignment="Center"/>
+
+                <StackPanel>
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding RecoveryStatus}" Foreground="Green" HorizontalAlignment="Center"/>
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

@@ -4,78 +4,124 @@ using ChatApp.Models;
 
 namespace ChatApp.Services
 {
-    public class GoogleAuthService
+    public class GoogleAuthService : IExternalAuthProvider
     {
-        public Task<string> AuthenticateAsync()
+        public string ProviderName => "Google";
+
+        public async Task<User> AuthenticateAsync()
         {
             // Simulate OAuth delay
-            return Task.Delay(1000).ContinueWith(t => "google_token_123");
+            await Task.Delay(500);
+            return new User
+            {
+                Username = "GoogleUser",
+                Email = "user@gmail.com",
+                Profile = new UserProfile
+                {
+                    Status = UserStatus.Online,
+                    AvatarUrl = "/Assets/google.png",
+                    Bio = "Signed in with Google"
+                }
+            };
         }
     }
 
-    public class AppleAuthService
+    public class AppleAuthService : IExternalAuthProvider
     {
-        public Task<string> AuthenticateAsync()
+        public string ProviderName => "Apple";
+
+        public async Task<User> AuthenticateAsync()
         {
-            // Simulate OAuth delay
-            return Task.Delay(1000).ContinueWith(t => "apple_token_456");
+            await Task.Delay(500);
+            return new User
+            {
+                Username = "AppleUser",
+                Email = "user@icloud.com",
+                Profile = new UserProfile
+                {
+                    Status = UserStatus.Online,
+                    AvatarUrl = "/Assets/apple.png",
+                    Bio = "Signed in with Apple"
+                }
+            };
         }
     }
 
-    public class PasswordResetService
+    public class PasswordResetService : IPasswordResetService
     {
-        public Task SendResetLinkAsync(string email)
+        public async Task<string> GenerateResetTokenAsync(string email)
         {
-            return Task.Delay(500); // Simulate network
+            await Task.Delay(200);
+            return $"token-{Guid.NewGuid():N}";
+        }
+
+        public async Task<bool> SendResetLinkAsync(string email, string token)
+        {
+            await Task.Delay(200);
+            return !string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(token);
+        }
+
+        public Task<bool> ValidateResetTokenAsync(string email, string token)
+        {
+            return Task.FromResult(!string.IsNullOrWhiteSpace(email) && !string.IsNullOrWhiteSpace(token));
         }
     }
 
     public class AuthService : IAuthService
     {
-        private User _currentUser;
-        private readonly GoogleAuthService _googleService = new GoogleAuthService();
-        private readonly AppleAuthService _appleService = new AppleAuthService();
-        private readonly PasswordResetService _resetService = new PasswordResetService();
-
+        private readonly IPasswordResetService _resetService;
+        private readonly Dictionary<string, string> _userPasswords = new();
+        private readonly Dictionary<string, User> _userDirectory = new();
         public User CurrentUser => _currentUser;
+
+        public AuthService(IPasswordResetService resetService)
+        {
+            _resetService = resetService;
+
+            var seededUser = new User
+            {
+                Email = "demo@chatapp.com",
+                Username = "DemoUser",
+                Profile = new UserProfile
+                {
+                    Status = UserStatus.Online,
+                    AvatarUrl = "/Assets/avatar_placeholder.png",
+                    Bio = "Demo account"
+                }
+            };
+
+            _userDirectory[seededUser.Email] = seededUser;
+            _userPasswords[seededUser.Email] = "password";
+        }
 
         public async Task<bool> LoginAsync(string email, string password)
         {
             await Task.Delay(500); // Simulate DB check
-            if (!string.IsNullOrEmpty(email) && !string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             {
-                _currentUser = new User
+                return false;
+            }
+
+            if (_userPasswords.TryGetValue(email, out var storedPassword) && storedPassword == password)
+            {
+                _currentUser = _userDirectory[email];
+                _currentUser.Profile.Status = UserStatus.Online;
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> LoginWithProviderAsync(IExternalAuthProvider provider)
+        {
+            var user = await provider.AuthenticateAsync();
+            if (user != null)
+            {
+                _currentUser = user;
+                if (!_userDirectory.ContainsKey(user.Email))
                 {
-                    Email = email,
-                    Username = email.Split('@')[0],
-                    Profile = new UserProfile
-                    {
-                        Status = UserStatus.Online,
-                        AvatarUrl = "/Assets/avatar_placeholder.png"
-                    }
-                };
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<bool> LoginWithGoogleAsync()
-        {
-            var token = await _googleService.AuthenticateAsync();
-            if (token != null)
-            {
-                _currentUser = new User { Username = "GoogleUser", Email = "user@gmail.com" };
-                return true;
-            }
-            return false;
-        }
-
-        public async Task<bool> LoginWithAppleAsync()
-        {
-            var token = await _appleService.AuthenticateAsync();
-            if (token != null)
-            {
-                _currentUser = new User { Username = "AppleUser", Email = "user@icloud.com" };
+                    _userDirectory[user.Email] = user;
+                    _userPasswords[user.Email] = "oauth-login";
+                }
                 return true;
             }
             return false;
@@ -85,11 +131,67 @@ namespace ChatApp.Services
         {
             await Task.Delay(500); // Simulate API
             // Validation logic here
+
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException("Email, password, and username are required");
+            }
+
+            if (_userDirectory.ContainsKey(email))
+            {
+                throw new InvalidOperationException("User already exists");
+            }
+
+            var newUser = new User
+            {
+                Email = email,
+                Username = username,
+                Profile = new UserProfile
+                {
+                    Status = UserStatus.Online,
+                    AvatarUrl = "/Assets/avatar_placeholder.png",
+                    Bio = "New user"
+                }
+            };
+
+            _userDirectory[email] = newUser;
+            _userPasswords[email] = password;
         }
 
         public async Task RecoverPasswordAsync(string email)
         {
-            await _resetService.SendResetLinkAsync(email);
+            var token = await _resetService.GenerateResetTokenAsync(email);
+            await _resetService.SendResetLinkAsync(email, token);
+        }
+
+        public Task<bool> ChangeEmailAsync(string newEmail)
+        {
+            if (_currentUser == null || string.IsNullOrWhiteSpace(newEmail)) return Task.FromResult(false);
+            if (_userDirectory.ContainsKey(newEmail)) return Task.FromResult(false);
+
+            _userDirectory.Remove(_currentUser.Email);
+            _userPasswords[newEmail] = _userPasswords[_currentUser.Email];
+            _userPasswords.Remove(_currentUser.Email);
+
+            _currentUser.Email = newEmail;
+            _userDirectory[newEmail] = _currentUser;
+            return Task.FromResult(true);
+        }
+
+        public Task<bool> ChangePasswordAsync(string currentPassword, string newPassword)
+        {
+            if (_currentUser == null || string.IsNullOrWhiteSpace(newPassword)) return Task.FromResult(false);
+            if (!_userPasswords.TryGetValue(_currentUser.Email, out var stored) || stored != currentPassword) return Task.FromResult(false);
+
+            _userPasswords[_currentUser.Email] = newPassword;
+            return Task.FromResult(true);
+        }
+
+        public Task UpdateProfileAsync(UserProfile profile)
+        {
+            if (_currentUser == null || profile == null) return Task.CompletedTask;
+            _currentUser.Profile = profile;
+            return Task.CompletedTask;
         }
 
         public void Logout()

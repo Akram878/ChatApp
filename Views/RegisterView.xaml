@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:core="clr-namespace:ChatApp.Core"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid Background="#F0F2F5">
         <Border Background="White" CornerRadius="10" Width="400" Height="550">
@@ -11,10 +12,10 @@
 
                 <TextBox Text="{Binding Username}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Username"/>
                 <TextBox Text="{Binding Email}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Email"/>
-                <!-- PasswordBox binding via helper or simple box for simplification since no code-behind allow -->
-                <TextBox Text="{Binding Password}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Password (Visible for Demo)"/>
-                <TextBox Text="{Binding ConfirmPassword}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Confirm Password"/>
 
+                <PasswordBox core:PasswordBoxAssistant.BoundPassword="{Binding Password, Mode=TwoWay}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Password"/>
+                <PasswordBox core:PasswordBoxAssistant.BoundPassword="{Binding ConfirmPassword, Mode=TwoWay}" Margin="0,0,0,15" Padding="10" FontSize="14" Tag="Confirm Password"/>
+                
                 <Button Command="{Binding RegisterCommand}" Content="Sign Up" Background="#0084FF" Foreground="White" Padding="10" Margin="0,10" BorderThickness="0"/>
                 <Button Command="{Binding BackToLoginCommand}" Content="Back to Login" Background="Transparent" Foreground="#666" BorderThickness="0"/>
             </StackPanel>

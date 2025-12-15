@@ -14,10 +14,17 @@ namespace ChatApp.Models
         Read
     }
 
+    public enum NotificationMode
+    {
+        Sound,
+        Banner,
+        Disabled
+    }
+
     public class NotificationSettings
     {
-        public bool IsSoundEnabled { get; set; } = true;
-        public bool IsBannerEnabled { get; set; } = true;
-        public bool IsDisabled { get; set; } = false;
+        public NotificationMode Mode { get; set; } = NotificationMode.Banner;
+        public bool IsSoundEnabled => Mode == NotificationMode.Sound || Mode == NotificationMode.Banner;
+        public bool IsBannerEnabled => Mode == NotificationMode.Banner;
     }
 }
