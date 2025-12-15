@@ -3,6 +3,7 @@ using ChatApp.ViewModels;
 using System.ComponentModel.Design;
 using System.Windows;
 using ChatApp.Core;
+using ServiceContainer = ChatApp.Core.ServiceContainer;
 namespace ChatApp
 {
     public partial class App : Application

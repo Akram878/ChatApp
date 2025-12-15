@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using ChatApp.Models;
-
+using System.Collections.Generic;
 namespace ChatApp.Services
 {
     public class GoogleAuthService : IExternalAuthProvider
@@ -72,7 +72,9 @@ namespace ChatApp.Services
         private readonly IPasswordResetService _resetService;
         private readonly Dictionary<string, string> _userPasswords = new();
         private readonly Dictionary<string, User> _userDirectory = new();
-        public User CurrentUser => _currentUser;
+        private User? _currentUser;
+        public User? CurrentUser => _currentUser;
+
 
         public AuthService(IPasswordResetService resetService)
         {

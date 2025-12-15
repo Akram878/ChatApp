@@ -22,7 +22,7 @@ namespace ChatApp.Services
 
     public interface IAuthService
     {
-        User CurrentUser { get; }
+        User? CurrentUser { get; }
         Task<bool> LoginAsync(string email, string password);
         Task<bool> LoginWithProviderAsync(IExternalAuthProvider provider);
         Task RegisterAsync(string email, string password, string username);
